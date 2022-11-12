@@ -1,5 +1,6 @@
 ;(() => {
   let pokemons = [],
+    pokemonId,
     randomPokemon,
     pok_container,
     pok_img,
@@ -7,7 +8,11 @@
     pok_level,
     btn_start,
     btn_stop,
-    resetSuffle
+    resetSuffle,
+    isSuffling = false,
+    counter,
+    sideBoxes,
+    selectedSidebox = 0
 
   pok_container = document.querySelector('.pok_container')
   pok_img = document.querySelector('.pok_img').querySelector('span')
@@ -15,6 +20,7 @@
   pok_level = document.querySelector('.top').querySelector('span')
   btn_start = document.querySelector('.btn_start')
   btn_stop = document.querySelector('.btn_stop')
+  sideBoxes = document.querySelectorAll('.box')
 
   const getPokemon = () => {
     fetch('https://pokeapi-enoki.netlify.app/pokeapi.json')
@@ -42,6 +48,9 @@
     return list[Math.floor(Math.random() * list.length)]
   }
   const setPokemon = (pokemon) => {
+    //saving id -
+    pokemonId = pokemon.id
+
     //   setting image -
     let styles = window.getComputedStyle(pok_img)
     pok_img.style.backgroundImage = `url(${pokemon.image})`
@@ -80,20 +89,96 @@
       pok_container.appendChild(section_parent)
     })
   }
-  let counter = 15
 
   const sufflePokemon = () => {
+    counter = 16
+    isSuffling = true
     resetSuffle = setInterval(() => {
       randomPokemon = getRandomObject(pokemons)
       setPokemon(randomPokemon)
       counter = counter - 1
       btn_stop.innerHTML = `Stop(${counter} sec)`
-      if (counter == 0) clearInterval(resetSuffle)
+      if (counter == 0) {
+        clearInterval(resetSuffle)
+        btn_stop.innerHTML = `Stop`
+        counter = 0
+        isSuffling = false
+      }
     }, 1000)
+  }
+  const stop = () => {
+    clearInterval(resetSuffle)
+    btn_stop.innerHTML = `Stop`
+    counter = 0
+    isSuffling = false
   }
 
   btn_start.addEventListener('click', sufflePokemon)
-  btn_stop.addEventListener('click', () => clearInterval(resetSuffle))
-
+  btn_stop.addEventListener('click', stop)
   getPokemon()
+
+  //Select pokemeon -
+  const selectPokemon = () => {
+    if (isSuffling || selectedSidebox > 5) return
+    let targetBox = sideBoxes[selectedSidebox]
+
+    // find pokemon -
+    let pokemon = pokemons.find((pokemon) => pokemon.id == pokemonId)
+
+    let select_parent = document.createElement('section')
+    select_parent.classList.add('selectedPok')
+
+    let section_top = document.createElement('section')
+    section_top.classList.add('select_top')
+
+    let name = document.createElement('h3')
+    name.innerHTML = pokemon.name
+    section_top.appendChild(name)
+
+    let levelContainer = document.createElement('div')
+    levelContainer.innerHTML = 'NV'
+
+    let level = document.createElement('em')
+    name.innerHTML = pokemon.level
+    levelContainer.appendChild(level)
+
+    let imgDrop = document.createElement('img')
+    imgDrop.classList.add('drop')
+    imgDrop.src = '../fond/water_drop.jpg'
+    levelContainer.appendChild(imgDrop)
+
+    let imgPok = document.createElement('img')
+    imgPok.classList.add('pok_photo')
+    imgPok.src = pokemon.image
+    levelContainer.appendChild(imgPok)
+
+    section_top.appendChild(levelContainer)
+
+    select_parent.appendChild(section_top)
+
+    pokemon.abilities.forEach((ability) => {
+      let details_container = document.createElement('section')
+      details_container.classList.add('select_bottom')
+
+      let skill = document.createElement('h3')
+      skill.innerHTML = ability.name
+      details_container.appendChild(skill)
+
+      let em = document.createElement('em')
+      em.innerHTML = ability.power
+      details_container.appendChild(em)
+
+      let p = document.createElement('p')
+      p.innerHTML = ability.description
+      details_container.appendChild(p)
+
+      select_parent.appendChild(details_container)
+    })
+
+    targetBox.appendChild(select_parent)
+
+    selectedSidebox++
+  }
+
+  pok_container.addEventListener('click', selectPokemon)
 })()
